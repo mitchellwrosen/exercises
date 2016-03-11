@@ -2,9 +2,15 @@ name: exercises
 version: 0.0.1.0
 license: MIT
 
+ghc-options: -Wall
+
 dependencies:
   - base
+  - filepath
   - hint
+  - QuickCheck
+  - temporary
+  - text
 
 executables:
   exercises:
