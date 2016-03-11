@@ -17,7 +17,6 @@ data Item = forall a. Typeable a => Item
   , itemImports    :: [(Text, [Text])]
   , itemType       :: Proxy a
   , itemCheck      :: a -> IO Bool
-  , itemIsOperator :: Bool
   }
 
 
@@ -56,4 +55,3 @@ appendItem =
   []
   (Proxy :: Proxy ([Int] -> [Int] -> [Int]))
   (qcCheck2 (++))
-  True

@@ -7,13 +7,10 @@ module Main where
 import Item
 
 import Data.Monoid
-import Data.Text     (Text)
-import Data.Typeable (Typeable)
 import Data.Proxy
 import Language.Haskell.Interpreter
 import System.FilePath.Posix
 import System.IO
-import System.IO.Temp
 
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
@@ -22,7 +19,7 @@ main :: IO ()
 main = go appendItem
 
 go :: Item -> IO ()
-go (Item name imports (p :: Proxy t) check is_operator) = do
+go (Item name imports (_ :: Proxy t) check) = do
   T.putStrLn name
   body <-
     let go acc = do
@@ -52,6 +49,4 @@ go (Item name imports (p :: Proxy t) check is_operator) = do
 
   case result of
     Left err -> print err
-    Right f -> do
-      check f
-      pure ()
+    Right f -> check f >>= print
