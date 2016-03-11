@@ -1,0 +1,11 @@
+name: exercises
+version: 0.0.1.0
+license: MIT
+
+dependencies:
+  - base
+  - hint
+
+executables:
+  exercises:
+    main: Main.hs
