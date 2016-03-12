@@ -8,25 +8,29 @@ import Item
 
 import Data.Monoid
 import Data.Proxy
-import Language.Haskell.Interpreter
+import Language.Haskell.Interpreter hiding (ModuleName)
+import System.Console.Haskeline
 import System.FilePath.Posix
 import System.IO
+import System.Random.Shuffle
 
 import qualified Data.Text    as T
 import qualified Data.Text.IO as T
 
 main :: IO ()
-main = go appendItem
+main = shuffleM allItems >>= mapM_ runItem
 
-go :: Item -> IO ()
-go (Item name imports (_ :: Proxy t) check) = do
-  T.putStrLn name
+
+runItem :: Item -> IO ()
+runItem item@(Item pkg_name mod_name func_name imports (_ :: Proxy t) check) = do
+  T.putStrLn (pkg_name <> ":" <> mod_name <> "." <> func_name)
+
   body <-
     let go acc = do
-          T.getLine >>= \case
-            "EOF" -> pure (T.unlines (reverse acc))
-            xs    -> go (xs:acc)
-    in go []
+          getInputLine "" >>= \case
+            Nothing -> pure (T.pack (unlines (reverse acc)))
+            Just xs -> go (xs:acc)
+    in runInputT defaultSettings (go [])
 
   (path, h) <- openTempFile "temp" "M.hs"
   let mname = takeBaseName path
@@ -45,8 +49,15 @@ go (Item name imports (_ :: Proxy t) check) = do
     set [searchPath := ["temp"]]
     loadModules [mname]
     setImportsQ [("Prelude", Nothing), (mname, Just "M")]
-    interpret ("(M." ++ T.unpack name ++ ")") (as :: t)
+    interpret ("(M." ++ T.unpack func_name ++ ")") (as :: t)
 
   case result of
-    Left err -> print err
-    Right f -> check f >>= print
+    Left err -> do
+      print err
+      runItem item
+
+    Right f -> do
+      correct <- check f
+      if correct
+         then pure ()
+         else runItem item

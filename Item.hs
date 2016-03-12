@@ -5,22 +5,38 @@ module Item where
 
 import Data.Monoid
 import Data.Proxy
-import Data.Text (Text)
+import Data.Text       (Text)
 import Data.Typeable
 import Test.QuickCheck
 
 import qualified Data.Text as T
 
 
+type PackageName  = Text
+type ModuleName   = Text
+type FunctionName = Text
+
+type Import = (PackageName, [FunctionName])
+
+
 data Item = forall a. Typeable a => Item
-  { itemName       :: Text
-  , itemImports    :: [(Text, [Text])]
-  , itemType       :: Proxy a
+  { itemPackage    :: PackageName
+  , itemModule     :: ModuleName
+  , itemName       :: FunctionName
+  , itemImports    :: [Import]
+  , itemType       :: Proxy a -- is this necessary?
   , itemCheck      :: a -> IO Bool
   }
 
+instance Eq Item where
+  Item x y z _ _ _ == Item x' y' z' _ _ _ = x == x' && y == y' && z == z'
 
-importsToText :: [(Text, [Text])] -> Text
+instance Ord Item where
+  compare (Item x y z _ _ _) (Item x' y' z' _ _ _) =
+    compare x x' <> compare y y' <> compare z z'
+
+
+importsToText :: [Import] -> Text
 importsToText =
   T.unlines . map (\(m, fs) -> "import " <> m <> "(" <> T.intercalate "," fs <> ")")
 
@@ -48,10 +64,29 @@ qcCheck2 f g = do
     _ -> pure False
 
 
+allItems :: [Item]
+allItems =
+  [ appendItem
+  , reverseItem
+  ]
+
+
 appendItem :: Item
 appendItem =
   Item
+  "base"
+  "Prelude"
   "++"
   []
   (Proxy :: Proxy ([Int] -> [Int] -> [Int]))
   (qcCheck2 (++))
+
+reverseItem :: Item
+reverseItem =
+  Item
+  "base"
+  "Prelude"
+  "reverse"
+  [("Prelude", ["(++)"])]
+  (Proxy :: Proxy ([Int] -> [Int]))
+  (qcCheck1 reverse)
