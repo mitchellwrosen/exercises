@@ -4,7 +4,6 @@
 module Item where
 
 import Data.Monoid
-import Data.Proxy
 import Data.Text       (Text)
 import Data.Typeable
 import Test.QuickCheck
@@ -24,7 +23,8 @@ data Item = forall a. Typeable a => Item
   , itemModule     :: ModuleName
   , itemName       :: FunctionName
   , itemImports    :: [Import]
-  , itemType       :: Proxy a -- is this necessary?
+  , itemFunc       :: a
+  -- , itemType       :: Proxy a -- is this necessary?
   , itemCheck      :: a -> IO Bool
   }
 
@@ -63,30 +63,19 @@ qcCheck2 f g = do
     Success _ _ _ -> pure True
     _ -> pure False
 
+asListInt1
+  :: (([Int] -> [Int]) -> IO Bool)
+  -> (([Int] -> [Int]) -> IO Bool)
+asListInt1 = id
+
+asListInt2
+  :: (([Int] -> [Int] -> [Int]) -> IO Bool)
+  -> (([Int] -> [Int] -> [Int]) -> IO Bool)
+asListInt2 = id
+
 
 allItems :: [Item]
 allItems =
-  [ appendItem
-  , reverseItem
+  [ Item "base" "Prelude" "++"      []                      (++)    (asListInt2 (qcCheck2 (++)))
+  , Item "base" "Prelude" "reverse" [("Prelude", ["(++)"])] reverse (asListInt1 (qcCheck1 reverse))
   ]
-
-
-appendItem :: Item
-appendItem =
-  Item
-  "base"
-  "Prelude"
-  "++"
-  []
-  (Proxy :: Proxy ([Int] -> [Int] -> [Int]))
-  (qcCheck2 (++))
-
-reverseItem :: Item
-reverseItem =
-  Item
-  "base"
-  "Prelude"
-  "reverse"
-  [("Prelude", ["(++)"])]
-  (Proxy :: Proxy ([Int] -> [Int]))
-  (qcCheck1 reverse)

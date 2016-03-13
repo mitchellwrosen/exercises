@@ -7,7 +7,6 @@ module Main where
 import Item
 
 import Data.Monoid
-import Data.Proxy
 import Language.Haskell.Interpreter hiding (ModuleName)
 import System.Console.Haskeline
 import System.FilePath.Posix
@@ -22,7 +21,7 @@ main = shuffleM allItems >>= mapM_ runItem
 
 
 runItem :: Item -> IO ()
-runItem item@(Item pkg_name mod_name func_name imports (_ :: Proxy t) check) = do
+runItem item@(Item pkg_name mod_name func_name imports func check) = do
   T.putStrLn (pkg_name <> ":" <> mod_name <> "." <> func_name)
 
   body <-
@@ -49,7 +48,7 @@ runItem item@(Item pkg_name mod_name func_name imports (_ :: Proxy t) check) = d
     set [searchPath := ["temp"]]
     loadModules [mname]
     setImportsQ [("Prelude", Nothing), (mname, Just "M")]
-    interpret ("(M." ++ T.unpack func_name ++ ")") (as :: t)
+    interpret ("(M." ++ T.unpack func_name ++ ")") func
 
   case result of
     Left err -> do
