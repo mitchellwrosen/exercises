@@ -6,6 +6,7 @@ module Main where
 
 import Item
 
+import Data.Acquire                 (mkAcquire, with)
 import Data.Monoid
 import Language.Haskell.Interpreter hiding (ModuleName)
 import System.Console.Haskeline
@@ -21,8 +22,9 @@ main = shuffleM allItems >>= mapM_ runItem
 
 
 runItem :: Item -> IO ()
-runItem item@(Item pkg_name mod_name func_name imports func check) = do
-  T.putStrLn (pkg_name <> ":" <> mod_name <> "." <> func_name)
+runItem item@(Item pkg_name mod_name func_name func_type func check imports) = do
+  T.putStrLn ("[" <> pkg_name <> "] [" <> mod_name <> "]")
+  T.putStrLn (func_name <> " :: " <> func_type)
 
   body <-
     let go acc = do
@@ -31,18 +33,20 @@ runItem item@(Item pkg_name mod_name func_name imports func check) = do
             Just xs -> go (xs:acc)
     in runInputT defaultSettings (go [])
 
-  (path, h) <- openTempFile "temp" "M.hs"
-  let mname = takeBaseName path
+  mname <-
+    with (mkAcquire (openTempFile "temp" "M.hs") (hClose . snd)) $ \(path, h) -> do
+      let mname = takeBaseName path
 
-  T.hPutStrLn h $ T.unlines
-    [ "{-# LANGUAGE NoImplicitPrelude #-}"
-    , "{-# LANGUAGE Safe #-}"
-    , "module " <> T.pack mname <> " where"
-    , importsToText imports
-    , "data " <> T.pack mname -- this prevents imports in the body
-    , body
-    ]
-  hClose h
+      T.hPutStrLn h $ T.unlines
+        [ "{-# LANGUAGE NoImplicitPrelude #-}"
+        , "{-# LANGUAGE Safe #-}"
+        , "module " <> T.pack mname <> " where"
+        , itemImportsToText imports
+        , "data " <> T.pack mname -- this prevents imports in the body
+        , body
+        ]
+
+      pure mname
 
   result <- runInterpreter $ do
     set [searchPath := ["temp"]]

@@ -12,6 +12,7 @@ dependencies:
   - hint
   - QuickCheck
   - random-shuffle
+  - resourcet
   - temporary
   - text
 

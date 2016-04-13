@@ -1,5 +1,6 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE RankNTypes                #-}
 
 module Item where
 
@@ -22,22 +23,22 @@ data Item = forall a. Typeable a => Item
   { itemPackage    :: PackageName
   , itemModule     :: ModuleName
   , itemName       :: FunctionName
-  , itemImports    :: [Import]
+  , itemType       :: Text
   , itemFunc       :: a
-  -- , itemType       :: Proxy a -- is this necessary?
   , itemCheck      :: a -> IO Bool
+  , itemImports    :: [Import]
   }
 
 instance Eq Item where
-  Item x y z _ _ _ == Item x' y' z' _ _ _ = x == x' && y == y' && z == z'
+  Item x y z _ _ _ _ == Item x' y' z' _ _ _ _ = x == x' && y == y' && z == z'
 
 instance Ord Item where
-  compare (Item x y z _ _ _) (Item x' y' z' _ _ _) =
+  compare (Item x y z _ _ _ _) (Item x' y' z' _ _ _ _) =
     compare x x' <> compare y y' <> compare z z'
 
 
-importsToText :: [Import] -> Text
-importsToText =
+itemImportsToText :: [Import] -> Text
+itemImportsToText =
   T.unlines . map (\(m, fs) -> "import " <> m <> "(" <> T.intercalate "," fs <> ")")
 
 
@@ -63,19 +64,27 @@ qcCheck2 f g = do
     Success _ _ _ -> pure True
     _ -> pure False
 
-asListInt1
-  :: (([Int] -> [Int]) -> IO Bool)
-  -> (([Int] -> [Int]) -> IO Bool)
+
+asListInt1 :: (forall a. ([a] -> [a])) -> [Int] -> [Int]
 asListInt1 = id
 
-asListInt2
-  :: (([Int] -> [Int] -> [Int]) -> IO Bool)
-  -> (([Int] -> [Int] -> [Int]) -> IO Bool)
+asListInt2 :: (forall a. ([a] -> [a] -> [a])) -> [Int] -> [Int] -> [Int]
 asListInt2 = id
 
 
 allItems :: [Item]
 allItems =
-  [ Item "base" "Prelude" "++"      []                      (++)    (asListInt2 (qcCheck2 (++)))
-  , Item "base" "Prelude" "reverse" [("Prelude", ["(++)"])] reverse (asListInt1 (qcCheck1 reverse))
+  [ Item "base" "Prelude" "&&" "Bool -> Bool -> Bool" (&&) (qcCheck2 (&&)) [("Prelude", ["Bool(..)"])]
+  , Item "base" "Prelude" "||" "Bool -> Bool -> Bool" (||) (qcCheck2 (||)) [("Prelude", ["Bool(..)"])]
+  , Item "base" "Prelude" "not" "Bool -> Bool" not (qcCheck1 not) [("Prelude", ["Bool(..)"])]
+  , Item "base" "Prelude" "maybe" "b -> (a -> b) -> Maybe a -> b" maybe
+      (\f -> pure (and [ f 5 (+1) Nothing == (5::Int)
+                       , f 5 (+1) (Just 6) == 7
+                       ])) []
+  , Item "base" "Prelude" "either" "(a -> c) -> (b -> c) -> Either a b -> c" either
+      (\f -> pure (and [ f (+1) (+2) (Left 5) == (6::Int)
+                       , f (+1) (+2) (Right 6) == 8
+                       ])) []
+  , Item "base" "Prelude" "++" "[a] -> [a] -> [a]" (++) (qcCheck2 (asListInt2 (++))) []
+  , Item "base" "Prelude" "reverse" "[a] -> [a]" reverse (qcCheck1 (asListInt1 reverse)) [("Prelude", ["(++)"])]
   ]
