@@ -80,7 +80,7 @@ allItems =
   , Item "base" "Prelude" "maybe" "b -> (a -> b) -> Maybe a -> b" maybe
       (\f -> pure (and [ f 5 (+1) Nothing == (5::Int)
                        , f 5 (+1) (Just 6) == 7
-                       ])) []
+                       ])) [("Prelude", ["Maybe(..)"])]
   , Item "base" "Prelude" "either" "(a -> c) -> (b -> c) -> Either a b -> c" either
       (\f -> pure (and [ f (+1) (+2) (Left 5) == (6::Int)
                        , f (+1) (+2) (Right 6) == 8
