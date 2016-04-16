@@ -40,7 +40,7 @@ data Item = forall a. Typeable a => Item
   , itemType       :: Text
   , itemWitness    :: a -- always undefined
   , itemImports    :: [Import]
-  , itemCheck      :: a -> IO ItemRunResult
+  , itemCheck      :: a -> Check
   }
 
 instance Eq Item where
@@ -61,6 +61,18 @@ data ItemRunResult
   deriving Show
 
 
+newtype Check = Check { unCheck :: IO ItemRunResult }
+
+-- Not a law-abiding monoid, because we don't bother running the effects of
+-- subsequent checks after finding a failing one.
+instance Monoid Check where
+  mempty = Check (pure RunSuccess)
+  Check f `mappend` Check g = Check $
+    f >>= \case
+      RunSuccess -> g
+      x -> pure x
+
+
 runItem :: FilePath -> Item -> Text -> IO ItemRunResult
 runItem temp_dir Item{..} body = do
   withTempModule $ \mname -> do
@@ -72,7 +84,7 @@ runItem temp_dir Item{..} body = do
 
     case result of
       Left err -> pure (RunInterpreterError err)
-      Right f -> itemCheck f
+      Right f -> unCheck (itemCheck f)
  where
   -- Run an action given a temporary file containing Haskell code. The file is
   -- removed after the action completes.
@@ -128,12 +140,15 @@ itemImportsToText = T.unlines . fmap (\case
   ImportHiding m fs -> "import " <> m <> " hiding (" <> T.intercalate "," fs <> ")")
 
 
+--------------------------------------------------------------------------------
+-- QuickCheck items
+
 qcCheck1
   :: (Show a, Arbitrary a, Eq b)
   => (a -> b)
   -> (a -> b)
-  -> IO ItemRunResult
-qcCheck1 f g =
+  -> Check
+qcCheck1 f g = Check $
   quickCheckWithResult qcArgs (\a -> f a == g a) >>= \case
     Success _ _ _ -> pure RunSuccess
     Failure _ _ _ _ _ _ _ (Just ex) _ _ -> pure (RunException ex)
@@ -143,8 +158,8 @@ qcCheck2
   :: (Show a, Show b, Arbitrary a, Arbitrary b, Eq c)
   => (a -> b -> c)
   -> (a -> b -> c)
-  -> IO ItemRunResult
-qcCheck2 f g =
+  -> Check
+qcCheck2 f g = Check $
   quickCheckWithResult qcArgs (\a b -> f a b == g a b) >>= \case
     Success _ _ _ -> pure RunSuccess
     Failure _ _ _ _ _ _ _ (Just ex) _ _ -> pure (RunException ex)
@@ -160,9 +175,22 @@ qcArgs = Args
   }
 
 
-hunitCheck :: [HUnit.Test] -> IO ItemRunResult
-hunitCheck tests = do
+--------------------------------------------------------------------------------
+-- HUnit items
+
+hunitCheck :: [HUnit.Test] -> Check
+hunitCheck tests = Check $ do
   (counts, f) <- HUnit.runTestText HUnit.putTextToShowS (HUnit.TestList tests)
   if | HUnit.errors counts /= 0   -> pure (RunFailure (T.pack (f "")))
      | HUnit.failures counts /= 0 -> pure (RunFailure (T.pack (f "")))
      | otherwise                  -> pure RunSuccess
+
+
+--------------------------------------------------------------------------------
+-- Deepseq items that must be correct by parametricity
+
+forceCheck :: NFData a => a -> Check
+forceCheck x = Check $
+  handle (\e -> pure (RunException e)) $ do
+    evaluate (force x)
+    pure RunSuccess

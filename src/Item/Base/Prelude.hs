@@ -40,7 +40,8 @@ items =
   , Item
       "base"
       "Prelude"
-      "maybe" "b -> (a -> b) -> Maybe a -> b"
+      "maybe"
+      "b -> (a -> b) -> Maybe a -> b"
       (undefined :: Int -> (Int -> Int) -> Maybe Int -> Int)
       [ImportHiding "Prelude" ["maybe"]]
       (\f -> hunitCheck
@@ -51,13 +52,12 @@ items =
   , Item
       "base"
       "Prelude"
-      "either" "(a -> c) -> (b -> c) -> Either a b -> c"
+      "either"
+      "(a -> c) -> (b -> c) -> Either a b -> c"
       (undefined :: (Int -> Int) -> (Int -> Int) -> Either Int Int -> Int)
       [ImportHiding "Prelude" ["either"]]
-      (\f -> hunitCheck
-        [ f (+1) (+2) (Left 5)  ~?= 6
-        , f (+1) (+2) (Right 6) ~?= 8
-        ])
+      (\f -> forceCheck (f identity identity (Left 1))
+          <> forceCheck (f identity identity (Right 1)))
 
   , Item
       "base"
@@ -71,8 +71,83 @@ items =
   , Item
       "base"
       "Prelude"
-      "reverse" "[a] -> [a]"
+      "reverse"
+      "[a] -> [a]"
       (undefined :: [Int] -> [Int])
       [ImportHiding "Prelude" ["reverse"]]
       (qcCheck1 reverse)
+
+  , Item
+      "base"
+      "Prelude"
+      "fst"
+      "(a, b) -> a"
+      (undefined :: (Int, Int) -> Int)
+      [ImportHiding "Prelude" ["fst"]]
+      (\f -> forceCheck (f (1,1)))
+
+  , Item
+      "base"
+      "Prelude"
+      "snd"
+      "(a, b) -> b"
+      (undefined :: (Int, Int) -> Int)
+      [ImportHiding "Prelude" ["snd"]]
+      (\f -> forceCheck (f (1,1)))
+
+  , Item
+      "base"
+      "Prelude"
+      "curry"
+      "((a, b) -> c) -> a -> b -> c"
+      (undefined :: ((Int, Int) -> Int) -> Int -> Int -> Int)
+      [ImportHiding "Prelude" ["curry"]]
+      (\f -> forceCheck (f fst 1 2))
+
+  , Item
+      "base"
+      "Prelude"
+      "uncurry"
+      "(a -> b -> c) -> (a, b) -> c"
+      (undefined :: (Int -> Int -> Int) -> (Int, Int) -> Int)
+      [ImportHiding "Prelude" ["uncurry"]]
+      (\f -> forceCheck (f (+) (1,1)))
+
+  , Item
+      "base"
+      "Prelude"
+      "even"
+      "Integral a => a -> Bool"
+      (undefined :: Int -> Bool)
+      [ImportHiding "Prelude" ["even", "odd"]]
+      (qcCheck1 even)
+
+  , Item
+      "base"
+      "Prelude"
+      "gcd"
+      "Integral a => a -> a -> a"
+      (undefined :: Int -> Int -> Int)
+      [ImportHiding "Prelude" ["gcd"]]
+      (qcCheck2 gcd)
+
+  , Item
+      "base"
+      "Prelude"
+      "lcm"
+      "Integral a => a -> a -> a"
+      (undefined :: Int -> Int -> Int)
+      [ImportHiding "Prelude" ["lcm"]]
+      (qcCheck2 lcm)
+
+  , Item
+      "base"
+      "Prelude"
+      "mapM"
+      "Monad m => (a -> m b) -> [a] -> m [b]"
+      (undefined :: (Int -> Maybe Int) -> [Int] -> Maybe [Int])
+      [ImportHiding "Prelude" ["mapM", "traverse"]]
+      (\f ->
+        let g = \n -> if n > 10 then Nothing else Just n
+        in qcCheck1 (mapM g) (f g))
   ]
