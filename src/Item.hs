@@ -108,17 +108,17 @@ runItem temp_dir Item{..} body = do
     in
       with (mkAcquire acquire release) $ \(path, h) -> do
         let mname = T.pack (takeBaseName path)
+            contents = T.unlines
+              [ "{-# LANGUAGE NoImplicitPrelude #-}"
+              , "{-# LANGUAGE Safe #-}"
+              , "module " <> mname <> " where"
+              , itemImportsToText itemImports
+              , "data " <> mname -- this prevents imports in the body
+              , itemName <> " :: " <> itemType
+              , body
+              ]
 
-        T.hPutStrLn h $ T.unlines
-          [ "{-# LANGUAGE NoImplicitPrelude #-}"
-          , "{-# LANGUAGE Safe #-}"
-          , "module " <> mname <> " where"
-          , itemImportsToText itemImports
-          , "data " <> mname -- this prevents imports in the body
-          , itemName <> " :: " <> itemType
-          , body
-          ]
-
+        T.hPutStrLn h contents
         pure mname
 
 

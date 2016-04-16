@@ -15,18 +15,14 @@ library
   ghc-options: -Wall
   build-depends:
       base
-    , containers
+    , protolude
+    , text
     , directory
     , filepath
-    , haskeline
     , hint
     , HUnit
-    , protolude
     , QuickCheck
-    , random-shuffle
     , resourcet
-    , temporary
-    , text
   exposed-modules:
       Item
       Item.Base.Prelude
@@ -40,16 +36,9 @@ executable exercises
   ghc-options: -Wall
   build-depends:
       base
-    , containers
-    , directory
-    , filepath
-    , haskeline
-    , hint
-    , HUnit
     , protolude
-    , QuickCheck
-    , random-shuffle
-    , resourcet
-    , temporary
     , text
+    , exercises
+    , haskeline
+    , random-shuffle
   default-language: Haskell2010

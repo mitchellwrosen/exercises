@@ -8,23 +8,24 @@ default-extensions: NoImplicitPrelude
 
 dependencies:
   - base
-  - containers
-  - directory
-  - filepath
-  - haskeline
-  - hint
-  - HUnit
   - protolude
-  - QuickCheck
-  - random-shuffle
-  - resourcet
-  - temporary
   - text
 
 library:
   source-dirs: src
+  dependencies:
+    - directory
+    - filepath
+    - hint
+    - HUnit
+    - QuickCheck
+    - resourcet
 
 executables:
   exercises:
     main: Main.hs
     source-dirs: app
+    dependencies:
+      - exercises
+      - haskeline
+      - random-shuffle
