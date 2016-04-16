@@ -8,8 +8,10 @@ license:        MIT
 build-type:     Simple
 cabal-version:  >= 1.10
 
-executable exercises
-  main-is: Main.hs
+library
+  hs-source-dirs:
+      src
+  default-extensions: NoImplicitPrelude
   ghc-options: -Wall
   build-depends:
       base
@@ -18,6 +20,33 @@ executable exercises
     , filepath
     , haskeline
     , hint
+    , HUnit
+    , protolude
+    , QuickCheck
+    , random-shuffle
+    , resourcet
+    , temporary
+    , text
+  exposed-modules:
+      Item
+      Item.Base.Prelude
+  default-language: Haskell2010
+
+executable exercises
+  main-is: Main.hs
+  hs-source-dirs:
+      app
+  default-extensions: NoImplicitPrelude
+  ghc-options: -Wall
+  build-depends:
+      base
+    , containers
+    , directory
+    , filepath
+    , haskeline
+    , hint
+    , HUnit
+    , protolude
     , QuickCheck
     , random-shuffle
     , resourcet

@@ -4,6 +4,8 @@ license: MIT
 
 ghc-options: -Wall
 
+default-extensions: NoImplicitPrelude
+
 dependencies:
   - base
   - containers
@@ -11,12 +13,18 @@ dependencies:
   - filepath
   - haskeline
   - hint
+  - HUnit
+  - protolude
   - QuickCheck
   - random-shuffle
   - resourcet
   - temporary
   - text
 
+library:
+  source-dirs: src
+
 executables:
   exercises:
     main: Main.hs
+    source-dirs: app
