@@ -146,8 +146,17 @@ items =
       "mapM"
       "Monad m => (a -> m b) -> [a] -> m [b]"
       (undefined :: (Int -> Maybe Int) -> [Int] -> Maybe [Int])
-      [ImportHiding "Prelude" ["mapM", "traverse"]]
+      [ImportHiding "Prelude" ["mapM", "traverse", "sequence", "sequenceA"]]
       (\f ->
         let g = \n -> if n > 10 then Nothing else Just n
         in qcCheck1 (mapM g) (f g))
+
+  , Item
+      "base"
+      "Prelude"
+      "sequence"
+      "Monad m => [m a] -> m [a]"
+      (undefined :: [Maybe Int] -> Maybe [Int])
+      [ImportHiding "Prelude" ["mapM", "traverse", "sequence", "sequenceA"]]
+      (qcCheck1 sequence)
   ]

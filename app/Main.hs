@@ -6,6 +6,7 @@ module Main where
 
 import Protolude
 
+import Data.OpenUnion
 import Item
 
 import qualified Item.Base.Prelude as IBasePrelude
@@ -28,6 +29,7 @@ allItems = IBasePrelude.items
 main :: IO ()
 main = shuffleM allItems >>= mapM_ f
  where
+  f :: Item -> IO ()
   f item = do
     T.putStrLn ("[" <> itemPackage item <> "] [" <> itemModule item <> "]")
     T.putStrLn (prettyPrintItemName (itemName item) <> " :: " <> itemType item)
@@ -39,7 +41,13 @@ main = shuffleM allItems >>= mapM_ f
               Just xs -> go (xs:acc)
       in runInputT defaultSettings (go [])
 
-    runItem tempModulesDir item body >>= print
+    result <- runItem tempModulesDir item body
+    case result of
+      Union I1 x -> print x
+      Union I2 x -> print x
+      Union I3 x -> print x
+      Union I4 x -> print x
+      Union I5 x -> print x
 
 prettyPrintItemName :: FunctionName -> Text
 prettyPrintItemName name
