@@ -24,7 +24,6 @@ library
     , QuickCheck
     , resourcet
   exposed-modules:
-      Data.OpenUnion
       Item
       Item.Base.Prelude
   default-language: Haskell2010

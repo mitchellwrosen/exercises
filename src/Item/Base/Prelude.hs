@@ -6,7 +6,8 @@ import Protolude
 
 import Item
 
-import Test.HUnit ((~?=))
+import Language.Haskell.Interpreter (as)
+import Test.HUnit                   ((~?=))
 
 items :: [Item]
 items =
@@ -15,7 +16,7 @@ items =
       "Prelude"
       "&&"
       "Bool -> Bool -> Bool"
-      (undefined :: Bool -> Bool -> Bool)
+      (as :: Bool -> Bool -> Bool)
       [ImportHiding "Prelude" ["(&&)"]]
       (qcCheck2 (&&))
 
@@ -24,7 +25,7 @@ items =
       "Prelude"
       "||"
       "Bool -> Bool -> Bool"
-      (undefined :: Bool -> Bool -> Bool)
+      (as :: Bool -> Bool -> Bool)
       [ImportHiding "Prelude" ["(||)"]]
       (qcCheck2 (||))
 
@@ -33,7 +34,7 @@ items =
       "Prelude"
       "not"
       "Bool -> Bool"
-      (undefined :: Bool -> Bool)
+      (as :: Bool -> Bool)
       [ImportHiding "Prelude" ["not"]]
       (qcCheck1 not)
 
@@ -42,7 +43,7 @@ items =
       "Prelude"
       "maybe"
       "b -> (a -> b) -> Maybe a -> b"
-      (undefined :: Int -> (Int -> Int) -> Maybe Int -> Int)
+      (as :: Int -> (Int -> Int) -> Maybe Int -> Int)
       [ImportHiding "Prelude" ["maybe"]]
       (\f -> hunitCheck
         [ f 5 (+1) Nothing  ~?= 5
@@ -54,7 +55,7 @@ items =
       "Prelude"
       "either"
       "(a -> c) -> (b -> c) -> Either a b -> c"
-      (undefined :: (Int -> Int) -> (Int -> Int) -> Either Int Int -> Int)
+      (as :: (Int -> Int) -> (Int -> Int) -> Either Int Int -> Int)
       [ImportHiding "Prelude" ["either"]]
       (\f -> forceCheck (f identity identity (Left 1))
           <> forceCheck (f identity identity (Right 1)))
@@ -64,7 +65,7 @@ items =
       "Prelude"
       "++"
       "[a] -> [a] -> [a]"
-      (undefined :: [Int] -> [Int] -> [Int])
+      (as :: [Int] -> [Int] -> [Int])
       [ImportHiding "Prelude" ["(++)"]]
       (qcCheck2 (++))
 
@@ -73,7 +74,7 @@ items =
       "Prelude"
       "reverse"
       "[a] -> [a]"
-      (undefined :: [Int] -> [Int])
+      (as :: [Int] -> [Int])
       [ImportHiding "Prelude" ["reverse"]]
       (qcCheck1 reverse)
 
@@ -82,7 +83,7 @@ items =
       "Prelude"
       "fst"
       "(a, b) -> a"
-      (undefined :: (Int, Int) -> Int)
+      (as :: (Int, Int) -> Int)
       [ImportHiding "Prelude" ["fst"]]
       (\f -> forceCheck (f (1,1)))
 
@@ -91,7 +92,7 @@ items =
       "Prelude"
       "snd"
       "(a, b) -> b"
-      (undefined :: (Int, Int) -> Int)
+      (as :: (Int, Int) -> Int)
       [ImportHiding "Prelude" ["snd"]]
       (\f -> forceCheck (f (1,1)))
 
@@ -100,7 +101,7 @@ items =
       "Prelude"
       "curry"
       "((a, b) -> c) -> a -> b -> c"
-      (undefined :: ((Int, Int) -> Int) -> Int -> Int -> Int)
+      (as :: ((Int, Int) -> Int) -> Int -> Int -> Int)
       [ImportHiding "Prelude" ["curry"]]
       (\f -> forceCheck (f fst 1 2))
 
@@ -109,7 +110,7 @@ items =
       "Prelude"
       "uncurry"
       "(a -> b -> c) -> (a, b) -> c"
-      (undefined :: (Int -> Int -> Int) -> (Int, Int) -> Int)
+      (as :: (Int -> Int -> Int) -> (Int, Int) -> Int)
       [ImportHiding "Prelude" ["uncurry"]]
       (\f -> forceCheck (f (+) (1,1)))
 
@@ -118,7 +119,7 @@ items =
       "Prelude"
       "even"
       "Integral a => a -> Bool"
-      (undefined :: Int -> Bool)
+      (as :: Int -> Bool)
       [ImportHiding "Prelude" ["even", "odd"]]
       (qcCheck1 even)
 
@@ -127,7 +128,7 @@ items =
       "Prelude"
       "gcd"
       "Integral a => a -> a -> a"
-      (undefined :: Int -> Int -> Int)
+      (as :: Int -> Int -> Int)
       [ImportHiding "Prelude" ["gcd"]]
       (qcCheck2 gcd)
 
@@ -136,7 +137,7 @@ items =
       "Prelude"
       "lcm"
       "Integral a => a -> a -> a"
-      (undefined :: Int -> Int -> Int)
+      (as :: Int -> Int -> Int)
       [ImportHiding "Prelude" ["lcm"]]
       (qcCheck2 lcm)
 
@@ -145,7 +146,7 @@ items =
       "Prelude"
       "mapM"
       "Monad m => (a -> m b) -> [a] -> m [b]"
-      (undefined :: (Int -> Maybe Int) -> [Int] -> Maybe [Int])
+      (as :: (Int -> Maybe Int) -> [Int] -> Maybe [Int])
       [ImportHiding "Prelude" ["mapM", "traverse", "sequence", "sequenceA"]]
       (\f ->
         let g = \n -> if n > 10 then Nothing else Just n
@@ -156,7 +157,7 @@ items =
       "Prelude"
       "sequence"
       "Monad m => [m a] -> m [a]"
-      (undefined :: [Maybe Int] -> Maybe [Int])
+      (as :: [Maybe Int] -> Maybe [Int])
       [ImportHiding "Prelude" ["mapM", "traverse", "sequence", "sequenceA"]]
       (qcCheck1 sequence)
   ]

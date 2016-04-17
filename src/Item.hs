@@ -7,13 +7,9 @@
 {-# LANGUAGE RecordWildCards           #-}
 {-# LANGUAGE TypeOperators             #-}
 
-{-# LANGUAGE GADTs             #-}
-
 module Item where
 
 import Protolude hiding ((<.>))
-
-import Data.OpenUnion
 
 import Data.Acquire                 (mkAcquire, with)
 import Data.Typeable
@@ -59,54 +55,23 @@ instance Ord Item where
     compare x x' <> compare y y' <> compare z z'
 
 
--- A-la-carte types representing ways an item can fail. During checking (if
--- interpretation succeeds), it can either throw an exception, fail to pass the
--- spec, or succeed. Actually interpreting and running the code adds two more
--- ways to fail: timeout, and an interpreter error.
-
-data RunInterpreterError
+data ItemRunResult
   = RunInterpreterError InterpreterError
+  | RunTimeout
+  | RunException SomeException
+  | RunFailure Text
+  | RunSuccess
   deriving Show
 
-data RunTimeout
-  = RunTimeout
-  deriving Show
-
-data RunException
-  = RunException SomeException
-  deriving Show
-
-data RunFailure
-  = RunFailure Text
-  deriving Show
-
-data RunSuccess
-  = RunSuccess
-  deriving Show
-
-type CheckResult =
-  Union [ RunException
-        , RunFailure
-        , RunSuccess
-        ]
-
-type ItemRunResult =
-  Union [ RunInterpreterError
-        , RunTimeout
-        , RunException
-        , RunFailure
-        , RunSuccess
-        ]
-
-newtype Check = Check { unCheck :: IO CheckResult }
+newtype Check = Check { unCheck :: IO ItemRunResult }
 
 -- Not a law-abiding monoid, because we don't bother running the effects of
 -- subsequent checks after finding a failing one.
 instance Monoid Check where
-  mempty = Check (pure (inj RunSuccess))
+  mempty = Check (pure RunSuccess)
   Check f `mappend` Check g = Check $
     f >>= \case
-      Union I3 RunSuccess -> g
+      RunSuccess -> g
       x -> pure x
 
 
@@ -120,15 +85,11 @@ runItem temp_dir Item{..} body = do
       interpret ("(M." ++ T.unpack itemName ++ ")") itemWitness
 
     case result of
-      Left err -> pure (inj (RunInterpreterError err))
+      Left err -> pure (RunInterpreterError err)
       Right f ->
         timeout (5 * 1000000) (unCheck (itemCheck f)) >>= \case
-          Nothing -> pure (inj RunTimeout)
-          Just u ->
-            case u of
-              Union I1 x -> pure (inj x)
-              Union I2 x -> pure (inj x)
-              Union I3 x -> pure (inj x)
+          Nothing -> pure RunTimeout
+          Just x  -> pure x
  where
   -- Run an action given a temporary file containing Haskell code. The file is
   -- removed after the action completes.
@@ -194,9 +155,9 @@ qcCheck1
   -> Check
 qcCheck1 f g = Check $
   quickCheckWithResult qcArgs (\a -> f a == g a) >>= \case
-    Success _ _ _ -> pure (inj RunSuccess)
-    Failure _ _ _ _ _ _ _ (Just ex) _ _ -> pure (inj (RunException ex))
-    result -> pure (inj (RunFailure (T.pack (output result))))
+    Success _ _ _ -> pure RunSuccess
+    Failure _ _ _ _ _ _ _ (Just ex) _ _ -> pure (RunException ex)
+    result -> pure (RunFailure (T.pack (output result)))
 
 qcCheck2
   :: (Show a, Show b, Arbitrary a, Arbitrary b, Eq c)
@@ -205,9 +166,9 @@ qcCheck2
   -> Check
 qcCheck2 f g = Check $
   quickCheckWithResult qcArgs (\a b -> f a b == g a b) >>= \case
-    Success _ _ _ -> pure (inj RunSuccess)
-    Failure _ _ _ _ _ _ _ (Just ex) _ _ -> pure (inj (RunException ex))
-    result -> pure (inj (RunFailure (T.pack (output result))))
+    Success _ _ _ -> pure RunSuccess
+    Failure _ _ _ _ _ _ _ (Just ex) _ _ -> pure (RunException ex)
+    result -> pure (RunFailure (T.pack (output result)))
 
 qcArgs :: Args
 qcArgs = Args
@@ -225,9 +186,9 @@ qcArgs = Args
 hunitCheck :: [HUnit.Test] -> Check
 hunitCheck tests = Check $ do
   (counts, f) <- HUnit.runTestText HUnit.putTextToShowS (HUnit.TestList tests)
-  if | HUnit.errors counts /= 0   -> pure (inj (RunFailure (T.pack (f ""))))
-     | HUnit.failures counts /= 0 -> pure (inj (RunFailure (T.pack (f ""))))
-     | otherwise                  -> pure (inj RunSuccess)
+  if | HUnit.errors counts /= 0   -> pure (RunFailure (T.pack (f "")))
+     | HUnit.failures counts /= 0 -> pure (RunFailure (T.pack (f "")))
+     | otherwise                  -> pure RunSuccess
 
 
 --------------------------------------------------------------------------------
@@ -235,6 +196,6 @@ hunitCheck tests = Check $ do
 
 forceCheck :: NFData a => a -> Check
 forceCheck x = Check $
-  handle (\e -> pure (inj (RunException e))) $ do
+  handle (\e -> pure (RunException e)) $ do
     _ <- evaluate (force x)
-    pure (inj RunSuccess)
+    pure RunSuccess
