@@ -2,10 +2,9 @@
 
 module Item.Base.Prelude where
 
-import Protolude
-
 import Item
 
+import Data.Monoid
 import Language.Haskell.Interpreter (as)
 import Test.HUnit                   ((~?=))
 
@@ -57,8 +56,8 @@ items =
       "(a -> c) -> (b -> c) -> Either a b -> c"
       (as :: (Int -> Int) -> (Int -> Int) -> Either Int Int -> Int)
       [ImportHiding "Prelude" ["either"]]
-      (\f -> forceCheck (f identity identity (Left 1))
-          <> forceCheck (f identity identity (Right 1)))
+      (\f -> forceCheck (f id id (Left 1))
+          <> forceCheck (f id id (Right 1)))
 
   , Item
       "base"

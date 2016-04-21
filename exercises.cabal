@@ -11,12 +11,11 @@ cabal-version:  >= 1.10
 library
   hs-source-dirs:
       src
-  default-extensions: NoImplicitPrelude
   ghc-options: -Wall
   build-depends:
       base
-    , protolude
     , text
+    , deepseq
     , directory
     , filepath
     , hint
@@ -28,15 +27,24 @@ library
       Item.Base.Prelude
   default-language: Haskell2010
 
-executable exercises
-  main-is: Main.hs
-  hs-source-dirs:
-      app
-  default-extensions: NoImplicitPrelude
+executable exercises-web
+  main-is: app/WebMain.hs
   ghc-options: -Wall
   build-depends:
       base
-    , protolude
+    , text
+    , containers
+    , exercises
+    , http-types
+    , lens
+    , scotty
+  default-language: Haskell2010
+
+executable exercises-cli
+  main-is: app/CliMain.hs
+  ghc-options: -Wall
+  build-depends:
+      base
     , text
     , exercises
     , haskeline

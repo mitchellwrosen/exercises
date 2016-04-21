@@ -2,17 +2,14 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Main where
-
-import Protolude
-
 import Item
 
 import qualified Item.Base.Prelude as IBasePrelude
 
-import Data.Char (isAlpha)
-import Data.List (unlines)
-import Prelude (FilePath)
+import Data.Char                (isAlpha)
+import Data.List                (unlines)
+import Data.Monoid
+import Data.Text                (Text)
 import System.Console.Haskeline
 import System.Random.Shuffle
 

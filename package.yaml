@@ -4,16 +4,14 @@ license: MIT
 
 ghc-options: -Wall
 
-default-extensions: NoImplicitPrelude
-
 dependencies:
   - base
-  - protolude
   - text
 
 library:
   source-dirs: src
   dependencies:
+    - deepseq
     - directory
     - filepath
     - hint
@@ -22,10 +20,18 @@ library:
     - resourcet
 
 executables:
-  exercises:
-    main: Main.hs
-    source-dirs: app
+  exercises-cli:
+    main: app/CliMain.hs
     dependencies:
       - exercises
       - haskeline
       - random-shuffle
+
+  exercises-web:
+    main: app/WebMain.hs
+    dependencies:
+      - containers
+      - exercises
+      - http-types
+      - lens
+      - scotty

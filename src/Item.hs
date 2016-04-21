@@ -9,9 +9,11 @@
 
 module Item where
 
-import Protolude hiding ((<.>))
-
+import Control.DeepSeq
+import Control.Exception
 import Data.Acquire                 (mkAcquire, with)
+import Data.Monoid
+import Data.Text                    (Text)
 import Data.Typeable
 import Language.Haskell.Interpreter hiding (ModuleName)
 import System.Directory             (removeFile)
